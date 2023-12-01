@@ -860,6 +860,7 @@ bool exportImportMemoryExplicitModifiersCase (Context& context, const VkFormat f
 		imageSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT << i;
 
 		vkd.getImageSubresourceLayout(device, *dstImage, &imageSubresource, &subresourceLayout);
+		fprintf(stderr, "VK layout[%d]: offset %ld size %ld\n",i, subresourceLayout.offset, subresourceLayout.size);
 
 		subresourceLayout.size = 0;
 		subresourceLayout.arrayPitch = 0;
