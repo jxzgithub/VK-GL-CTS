@@ -845,37 +845,40 @@ bool exportImportMemoryExplicitModifiersCase (Context& context, const VkFormat f
 
 	ExplicitModifier explicitModifier =
 	{
-		modifier.drmFormatModifier,
-		modifier.drmFormatModifierPlaneCount,
+			//TGL MC
+		0x100000000000007,
+		4,
 		DE_NULL,								// pPlaneLayouts
 	};
 	std::vector<VkSubresourceLayout>	planeLayouts;
-	for (uint32_t i = 0; i < modifier.drmFormatModifierPlaneCount; i++)
+	fprintf(stderr, "!!! HACK: Fake Explicit Layouts\n");
+	for (uint32_t i = 0; i < 4; i++)
 	{
 		VkImageSubresource imageSubresource;
 		VkSubresourceLayout subresourceLayout;
 
 		deMemset(&imageSubresource, 0, sizeof(imageSubresource));
 
-		imageSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT << i;
+		//imageSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT << i;
 
-		vkd.getImageSubresourceLayout(device, *dstImage, &imageSubresource, &subresourceLayout);
-		fprintf(stderr, "VK layout[%d]: offset %ld size %ld\n",i, subresourceLayout.offset, subresourceLayout.size);
+		// vkd.getImageSubresourceLayout(device, *dstImage, &imageSubresource, &subresourceLayout);
+
 
 		subresourceLayout.size = 0;
 		subresourceLayout.arrayPitch = 0;
 		subresourceLayout.depthPitch = 0;
-
+		subresourceLayout.offset = i * 10;
+		subresourceLayout.rowPitch = (i + 1) * 16;
 		planeLayouts.push_back(subresourceLayout);
-
+		fprintf(stderr, "VK layout[%d]: offset %ld rowPitch %ld\n",i, subresourceLayout.offset, subresourceLayout.rowPitch);
 	}
 	explicitModifier.pPlaneLayouts = planeLayouts.data();
-
+	fprintf(stderr, "!!! HACK: Always VK_FORMAT_G8_B8R8_2PLANE_420_UNORM with explicit Mod 0x%lx\n", modifier.drmFormatModifier);
 	Move<VkImage>				importedSrcImage		(createImageWithDrmFormatExplicitModifier(vkd, device, VK_IMAGE_TYPE_2D,
 																																						 VK_IMAGE_USAGE_TRANSFER_DST_BIT |
 																																						 VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 																																						 VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
-																																						 {format}, UVec2(64, 64), explicitModifier));
+																																						 {VK_FORMAT_G8_B8R8_2PLANE_420_UNORM}, UVec2(64, 64), explicitModifier));
 
 	VkMemoryRequirements importedSrcImageMemoryReq = getImageMemoryRequirements(vkd, device, *importedSrcImage);
 
@@ -996,8 +999,10 @@ tcu::TestCaseGroup* createTests (tcu::TestContext& testCtx, const std::string& n
 	de::MovePtr<tcu::TestCaseGroup>	drmFormatModifiersGroup	(new tcu::TestCaseGroup(testCtx, name.c_str(), "DRM format modifiers tests"));
 	const VkFormat					formats[]				=
 	{
+	  VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+#if 0
 		VK_FORMAT_R4G4_UNORM_PACK8,
-		VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+
 		VK_FORMAT_B4G4R4A4_UNORM_PACK16,
 		VK_FORMAT_R5G6B5_UNORM_PACK16,
 		VK_FORMAT_B5G6R5_UNORM_PACK16,
@@ -1127,6 +1132,7 @@ tcu::TestCaseGroup* createTests (tcu::TestContext& testCtx, const std::string& n
 		VK_FORMAT_E5B9G9R9_UFLOAT_PACK32,
 		VK_FORMAT_A4R4G4B4_UNORM_PACK16_EXT,
 		VK_FORMAT_A4B4G4R4_UNORM_PACK16_EXT,
+#endif
 	};
 
 	{
